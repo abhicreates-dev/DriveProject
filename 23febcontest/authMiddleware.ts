@@ -1,0 +1,53 @@
+import { type Request, type Response, type NextFunction } from "express";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+
+const jwtSecret = process.env.SECRET!;
+
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: string;
+        role?: string;
+      };
+    }
+  }
+}
+
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+
+    try {
+        const header = req.headers.authorization;
+        if (!header) {
+            return res.status(401).json({
+                success: false,
+                error: "Unauthorized"
+            });
+        }
+
+        const parts = header.split(' ');
+
+        if(parts.length !== 2 || parts[0] !== 'Bearer' ||parts[1] == undefined) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unauthorized'
+            });
+        }
+
+        const token = parts[1];
+        const decoded = jwt.verify(token, jwtSecret as string) as JwtPayload;
+
+        req.user = {
+            userId: decoded.userId,
+        }
+        next();
+        
+    } catch (err) {
+        return res.status(401).json({
+            success: false,
+            error: "Unauthorized"
+        })
+    }
+}
