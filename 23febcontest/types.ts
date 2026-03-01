@@ -8,5 +8,5 @@ export const userSchema = z.object({
 
 export const folderSchema = z.object({
     title: z.string(),
-    parentId: z.string()
+    parentId: z.string().optional()
 })

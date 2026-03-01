@@ -12,19 +12,19 @@ const app = express()
 
 app.use(express.json())
 
-app.post("/signup", async(req: Request, res: Response)=>{
+app.post("/signup", async (req: Request, res: Response) => {
     const validation = userSchema.safeParse(req.body)
 
-    if(!validation.success){
+    if (!validation.success) {
         return res.status(400).json({
             message: "kuch toh gadbad hai"
         })
     }
 
-    const {email, password, name} = validation.data
+    const { email, password, name } = validation.data
 
     const User = await prisma.user.create({
-        data:{
+        data: {
             name,
             email,
             password
@@ -38,36 +38,36 @@ app.post("/signup", async(req: Request, res: Response)=>{
 })
 
 
-app.post("/signin", async(req: Request, res: Response)=>{
+app.post("/signin", async (req: Request, res: Response) => {
     const validation = userSchema.safeParse(req.body)
 
-    if(!validation.success){
+    if (!validation.success) {
         return res.status(400).json({
             message: "kuch toh gadbad hai"
         })
     }
 
-    const {email, password, name} = validation.data
+    const { email, password, name } = validation.data
 
     const userFind = await prisma.user.findUnique({
-        where:{email}
+        where: { email }
     })
 
-    if(!userFind){
+    if (!userFind) {
         return res.status(400).json({
             message: "kuch toh gadbad hai user nahi mil raha"
         })
     }
 
-    if (userFind.password != password){
+    if (userFind.password != password) {
         return res.status(400).json({
             message: "kuch toh gadbad hai password nahi mil raha"
         })
     }
 
     const token = jwt.sign(
-    { userId: userFind.id },
-    jwtSecret,
+        { userId: userFind.id },
+        jwtSecret,
     );
 
     return res.status(200).json({
@@ -76,21 +76,21 @@ app.post("/signin", async(req: Request, res: Response)=>{
     })
 })
 
-app.post("/createFolder", authMiddleware, async(req: Request, res: Response)=>{
+app.post("/createFolder", authMiddleware, async (req: Request, res: Response) => {
     const validation = folderSchema.safeParse(req.body)
 
-    if(!validation.success){
+    if (!validation.success) {
         return res.status(400).json({
             message: "kuch toh gadbad hai"
         })
     }
 
-    const {title, parentId} = validation.data
+    const { title, parentId } = validation.data
 
     const folder = await prisma.folder.create({
         data: {
             title: title,
-            parentId: parentId || null,
+            parentId: parentId ?? null,
             userId: req.user!.userId
         }
     })
@@ -99,6 +99,38 @@ app.post("/createFolder", authMiddleware, async(req: Request, res: Response)=>{
         message: "folder created succesfully",
         data: folder
     })
+})
+
+
+
+app.get("/folders{/:parentId}", authMiddleware, async (req: Request, res: Response) => {
+
+    const parentId = req.params.parentId as string | null;
+
+    if (parentId == null) {
+        const folders = await prisma.folder.findMany({
+            where: {
+                userId: req.user!.userId,
+                parentId: null
+            }
+        })
+        return res.status(200).json({
+            message: "folders fetched succesfully",
+            data: folders
+        })
+    } else {
+        const folders = await prisma.folder.findMany({
+            where: {
+                userId: req.user!.userId,
+                parentId: parentId
+            }
+        })
+        return res.status(200).json({
+            message: "folders fetched succesfully",
+            data: folders
+        })
+    }
+
 })
 
 app.listen(3000)
