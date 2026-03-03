@@ -86,7 +86,7 @@ export function SignUp() {
                 </form>
 
                 <div className="text-sm text-center">
-                    Already have an account? <span className="text-blue-500 cursor-pointer" onClick={() => navigate("/signin")}>Sign in</span>
+                    Already have an account?? <span className="text-blue-500 cursor-pointer" onClick={() => navigate("/signin")}>Sign in</span>
                 </div>
             </div>
         </div>
