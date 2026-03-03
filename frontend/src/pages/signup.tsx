@@ -14,17 +14,25 @@ export function SignUp() {
     const navigate = useNavigate();
 
     const handleSubmit = async (e: any) => {
-        e.preventDefault();
-        setError(null);
-        setIsLoading(true);
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
+    try {
         await axios.post("http://localhost:3001/signup", {
-            name,
-            email,
-            password,
+        name,
+        email,
+        password,
         });
+
         navigate("/signin");
+    } catch (err: any) {
+        setError(
+        err.response?.data?.error || "Something went wrong. Please try again."
+        );
+    } finally {
         setIsLoading(false);
+    }
     };
 
     return (

@@ -17,11 +17,11 @@ const app = express()
 app.use(express.json())
 app.use(cors())
 
-let ACCESS_KEY_ID = "3d87ce9db4e77ca0747ba7351169bcc1";
-let ACCESS_KEY_SECRET = "afbe2c2da2984c4529d3eb05a1ff832c67161d9d568d7aa9b8d9ef5f6dafbfa6"
-let ACCESS_URL = "https://428e2045ae7369b9bb1de30453caa8b3.r2.cloudflarestorage.com"
+let ACCESS_KEY_ID = "4394e09bb5f78c5a179bfad4bf3f6664";
+let ACCESS_KEY_SECRET = "0b50d16dbd086fe47cd2f17d5edf15b8a73ead0b7003e847780612cd91293f72"
+let ACCESS_URL = "https://e21220f4758c0870ba9c388712d42ef2.r2.cloudflarestorage.com"
 
-let BUCKET_NAME = "clown-clone"
+let BUCKET_NAME = "youtube-100xdevs"
 
 const s3Client = new S3Client({
     region: "auto",
