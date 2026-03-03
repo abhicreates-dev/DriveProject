@@ -36,6 +36,7 @@ model File{
   id String  @id @default(uuid())
   title String 
   type Type
+  fileLink String?
   parentId String?
   userId String
   parent  Folder?     @relation(fields: [parentId], references: [id])

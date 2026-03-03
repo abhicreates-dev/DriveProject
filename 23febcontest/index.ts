@@ -1,9 +1,13 @@
 import express from 'express'
 import { type Request, type Response, type NextFunction } from "express";
-import { userSchema, folderSchema } from './types';
+import { userSchema, folderSchema, fileSchema } from './types';
 import { prisma } from './db';
 import { authMiddleware } from './authMiddleware';
 import jwt, { type JwtPayload } from "jsonwebtoken";
+import cors from "cors"
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { error } from 'node:console';
 
 const jwtSecret = process.env.SECRET!;
 
@@ -11,6 +15,30 @@ const jwtSecret = process.env.SECRET!;
 const app = express()
 
 app.use(express.json())
+app.use(cors())
+
+let ACCESS_KEY_ID = "3d87ce9db4e77ca0747ba7351169bcc1";
+let ACCESS_KEY_SECRET = "afbe2c2da2984c4529d3eb05a1ff832c67161d9d568d7aa9b8d9ef5f6dafbfa6"
+let ACCESS_URL = "https://428e2045ae7369b9bb1de30453caa8b3.r2.cloudflarestorage.com"
+
+let BUCKET_NAME = "clown-clone"
+
+const s3Client = new S3Client({
+    region: "auto",
+    endpoint: ACCESS_URL,
+    credentials: {
+        accessKeyId: ACCESS_KEY_ID,
+        secretAccessKey: ACCESS_KEY_SECRET,
+    },
+});
+
+
+function getFileExtension(fileName: string) {
+    const parts = fileName.split(".");
+    const extension = parts[parts.length - 1];
+    return extension && extension !== fileName ? extension : "bin";
+}
+
 
 app.post("/signup", async (req: Request, res: Response) => {
     const validation = userSchema.safeParse(req.body)
@@ -123,7 +151,7 @@ app.get("/folders{/:parentId}", authMiddleware, async (req: Request, res: Respon
             where: {
                 userId: req.user!.userId,
                 parentId: parentId
-            }
+            },
         })
         return res.status(200).json({
             message: "folders fetched succesfully",
@@ -133,4 +161,90 @@ app.get("/folders{/:parentId}", authMiddleware, async (req: Request, res: Respon
 
 })
 
-app.listen(3000)
+app.post("/createFile", authMiddleware, async(req: Request, res: Response)=>{
+    const validation = fileSchema.safeParse(req.body)
+
+    if(!validation.success){
+        return res.status(400).json({
+            message: "kuch toh gadbad hai", 
+            error: validation.error
+        })
+    }
+
+    const { title, type, filelink, parentId } = validation.data
+
+    const file = await prisma.file.create({
+        data:{
+            title: title,
+            type: type,
+            fileLink: filelink,
+            parentId: parentId,
+            userId: req.user!.userId
+        } 
+    })
+
+    res.status(200).json({
+        message: "file created succesfully",
+        data: file
+    })
+})
+
+app.get("/files/:parentId", authMiddleware, async(req: Request, res: Response)=>{
+    const parentId = req.params.parentId as string
+
+    const files = await prisma.file.findMany({
+        where:{
+            userId: req.user!.userId,
+            parentId: parentId
+        }
+    })
+
+    return res.status(200).json({
+        message: "files fetched succesfully",
+        data: files
+    })
+})
+
+
+app.post("/presign", async (req, res) => {
+  const { fileName, fileType } = req.body ?? {};
+
+  if (!fileName || !fileType) {
+    return res.status(400).json({
+      error: "fileName and fileType are required",
+    });
+  }
+
+  if (!fileType.startsWith("image/")) {
+    return res.status(400).json({
+      error: "Only image uploads allowed",
+    });
+  }
+
+  const extension = getFileExtension(fileName);
+  const key = `abhishek/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+  try {
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      ContentType: fileType,
+    });
+
+    const signedUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 60,
+    });
+
+    const publicUrl = ACCESS_URL
+      ? `${ACCESS_URL.replace(/\/$/, "")}/${key}`
+      : null;
+
+    res.json({ signedUrl, key, publicUrl });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to generate URL",
+    });
+  }
+});
+
+app.listen(3001)

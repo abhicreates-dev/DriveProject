@@ -7,6 +7,9 @@ import {BrowserRouter, Routes, Route} from "react-router"
 import logo from "./logo.svg";
 import reactLogo from "./react.svg";
 import { useState } from "react";
+import { Home } from "./pages/home";
+import { SignIn } from "./pages/signin";
+import { SignUp } from "./pages/signup";
 
 export function App() {
 
@@ -30,7 +33,9 @@ export function App() {
     <div>
         <BrowserRouter>
         <Routes>
-          <Route path="/" element={<APITester />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
         </BrowserRouter>
     </div>
